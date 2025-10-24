@@ -1,4 +1,4 @@
-name: Build Ceasar Cipher APK
+name: Build and Release Ceasar Cipher APK
 
 on:
   push:
@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # needed for creating releases
 
     steps:
       - name: 🧩 Checkout repository
@@ -33,31 +35,44 @@ jobs:
           options: -v ${{ github.workspace }}:/app
           run: |
             echo "🚀 Starting Buildozer build for Ceasar Cipher..."
-
             cd /app
 
-            # Accept Android SDK licenses automatically
+            # Accept Android SDK licenses
             yes | sdkmanager --licenses || true
-
-            # Ensure required build tools are installed
             sdkmanager "platform-tools" "build-tools;36.1.0" "platforms;android-31" || true
 
-            # Clean previous builds to avoid caching issues
             buildozer android clean || true
-
-            # Run the build
             buildozer -v android debug
 
             echo "✅ Build completed successfully."
 
-            # Create versioned APK filename
             VERSION=$(grep '^version =' buildozer.spec | awk '{print $3}')
             BUILD_NUMBER=${GITHUB_RUN_NUMBER}
             mkdir -p dist
             cp bin/*.apk "dist/CeasarCipher_v${VERSION}_build_${BUILD_NUMBER}.apk"
 
-      - name: 📦 Upload versioned APK artifact
+      - name: 📦 Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: CeasarCipher_v${{ github.run_number }}
           path: dist/*.apk
+
+      - name: 🏷️ Create GitHub Release and Upload APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}-build${{ github.run_number }}
+          name: Ceasar Cipher v${{ steps.get_version.outputs.version }} Build ${{ github.run_number }}
+          body: |
+            🚀 **Automatic Build**
+            - Version: v${{ steps.get_version.outputs.version }}
+            - Build: ${{ github.run_number }}
+            - Generated from latest commit on `main`
+          files: dist/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🧮 Extract version number
+        id: get_version
+        run: |
+          VERSION=$(grep '^version =' buildozer.spec | awk '{print $3}')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
