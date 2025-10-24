@@ -2,39 +2,40 @@ name: Build Ceasar Cipher APK
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📦 Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: 🐍 Set up Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: '3.10'
 
-      - name: 🏗️ Build APK with Buildozer
-        uses: docker://kivy/buildozer:latest
+      - name: Build APK with Buildozer
+        uses: addnab/docker-run-action@v3
         with:
-          args: >
-            /bin/bash -c "
-            echo '🚀 Starting Buildozer build for Ceasar Cipher...'
-            cd /github/workspace
+          image: kivy/buildozer:latest
+          options: -v ${{ github.workspace }}:/app
+          run: |
+            echo "🚀 Starting Buildozer build for Ceasar Cipher..."
+            cd /app
             export BUILDOZER_ALLOW_ROOT=1
             buildozer android clean
             buildozer -v android debug
-            echo '✅ Build completed successfully.'
-            mkdir -p dist
-            cp bin/*.apk dist/ || echo '⚠️ APK not found!'
-            "
+            echo "✅ Build completed successfully."
+            mkdir -p /app/dist
+            cp /app/bin/*.apk /app/dist/ || echo "⚠️ APK not found!"
 
-      - name: 📤 Upload APK artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CeasarCipher-APK
+          name: ceasar-cipher-apk
           path: dist/*.apk
