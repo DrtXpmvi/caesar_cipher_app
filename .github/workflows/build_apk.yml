@@ -36,22 +36,28 @@ jobs:
 
             cd /app
 
-            # Accept all Android SDK licenses automatically
+            # Accept Android SDK licenses automatically
             yes | sdkmanager --licenses || true
 
-            # Install required Android SDK components
+            # Ensure required build tools are installed
             sdkmanager "platform-tools" "build-tools;36.1.0" "platforms;android-31" || true
 
-            # Clean any previous build artifacts
+            # Clean previous builds to avoid caching issues
             buildozer android clean || true
 
-            # Start the actual build
+            # Run the build
             buildozer -v android debug
 
             echo "✅ Build completed successfully."
 
-      - name: 📦 Upload built APK
+            # Create versioned APK filename
+            VERSION=$(grep '^version =' buildozer.spec | awk '{print $3}')
+            BUILD_NUMBER=${GITHUB_RUN_NUMBER}
+            mkdir -p dist
+            cp bin/*.apk "dist/CeasarCipher_v${VERSION}_build_${BUILD_NUMBER}.apk"
+
+      - name: 📦 Upload versioned APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CeasarCipher-APK
-          path: bin/*.apk
+          name: CeasarCipher_v${{ github.run_number }}
+          path: dist/*.apk
