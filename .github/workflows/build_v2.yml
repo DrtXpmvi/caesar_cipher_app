@@ -9,21 +9,20 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Checkout the repository
+      # 1️⃣ Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      # Step 2: Set up Python 3.10
-      - name: Set up Python
+      # 2️⃣ Set up Python (host, optional, mostly for pre-checks)
+      - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
-          check-latest: true
+          check-latest: false
           update-environment: true
 
-      # Step 3: Build with Buildozer inside the Docker image
+      # 3️⃣ Build with Buildozer inside Docker
       - name: Build with Buildozer
         uses: addnab/docker-run-action@v3
         with:
@@ -33,14 +32,19 @@ jobs:
             echo "🚀 Starting Buildozer build for Caesar Cipher..."
             cd /app
 
-            # Allow Buildozer to run as root
+            # Allow running Buildozer as root
             export BUILDOZER_ALLOW_ROOT=1
 
-            # Disable pip --user installs in virtualenv
+            # Prevent pip from using --user inside virtualenv
             export PIP_USER=0
+            export PIP_NO_USER_CONFIG=1
+            export PIP_CONFIG_FILE=/dev/null
 
-            # Install requirements if needed
-            pip install --upgrade pip
+            # Upgrade pip, setuptools, and wheel globally
+            python3 -m pip install --upgrade pip setuptools wheel
 
-            # Build the APK
+            # Optional: Upgrade Cython globally if needed
+            python3 -m pip install --upgrade cython
+
+            # Run Buildozer
             buildozer android debug
