@@ -13,14 +13,14 @@ jobs:
     steps:
       # Step 1: Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Step 2: Set up Python 3.10
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.10
-          check-latest: false
+          check-latest: true
           update-environment: true
 
       # Step 3: Build with Buildozer inside the Docker image
