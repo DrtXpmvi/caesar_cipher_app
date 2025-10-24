@@ -17,7 +17,6 @@ source.main = main.py
 
 # App versioning
 version = 1.0.0
-version.regex = __version__ = ['"](.*)['"]
 
 # Application icon (make sure this file exists)
 icon.filename = assets/icon.png
