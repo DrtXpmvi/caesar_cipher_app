@@ -1,41 +1,56 @@
-name: Build Ceasar Cipher APK
+name: Build Android APK
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: 3.10
+          check-latest: false
+          update-environment: true
 
-      - name: Build APK with Buildozer
+      - name: Build with Buildozer
         uses: addnab/docker-run-action@v3
         with:
-          image: kivy/buildozer:latest
+          image: kivy/buildozer:latest  # Or pin a stable version e.g., kivy/buildozer:2024.03.01
           options: -v ${{ github.workspace }}:/app
           run: |
-            echo "🚀 Starting Buildozer build for Ceasar Cipher..."
+            echo "🚀 Starting Buildozer build for Caesar Cipher..."
             cd /app
+
+            # Allow running Buildozer as root
             export BUILDOZER_ALLOW_ROOT=1
+
+            # Disable pip --user installs in virtualenv
+            export PIP_USER=0
+
+            # Clean previous builds (optional but recommended)
             buildozer android clean
+
+            # Build APK in debug mode
             buildozer -v android debug
+
             echo "✅ Build completed successfully."
+
+            # Copy APK to dist folder
             mkdir -p /app/dist
             cp /app/bin/*.apk /app/dist/ || echo "⚠️ APK not found!"
 
-      - name: Upload APK artifact
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ceasar-cipher-apk
           path: dist/*.apk
+          if-no-files-found: warn
+          compression-level: 6
