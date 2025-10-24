@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Ceasar Cipher APK
 
 on:
   push:
@@ -14,22 +14,44 @@ jobs:
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🧰 Set up dependencies
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: ⚙️ Install Buildozer dependencies
         run: |
           sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip
-          pip install buildozer cython virtualenv
+          sudo apt install -y zip unzip openjdk-17-jdk
+          python -m pip install --upgrade pip
+          pip install buildozer cython
 
-      - name: ⚙️ Initialize Buildozer
-        run: |
-          buildozer init || true
+      - name: 🧱 Build APK inside Buildozer Docker
+        uses: addnab/docker-run-action@v3
+        with:
+          image: kivy/buildozer:latest
+          options: -v ${{ github.workspace }}:/app
+          run: |
+            echo "🚀 Starting Buildozer build for Ceasar Cipher..."
 
-      - name: 🏗️ Build APK
-        run: |
-          buildozer -v android debug
+            cd /app
 
-      - name: 📦 Upload APK artifact
+            # Accept all Android SDK licenses automatically
+            yes | sdkmanager --licenses || true
+
+            # Install required Android SDK components
+            sdkmanager "platform-tools" "build-tools;36.1.0" "platforms;android-31" || true
+
+            # Clean any previous build artifacts
+            buildozer android clean || true
+
+            # Start the actual build
+            buildozer -v android debug
+
+            echo "✅ Build completed successfully."
+
+      - name: 📦 Upload built APK
         uses: actions/upload-artifact@v4
         with:
-          name: CaesarCipherApp
+          name: CeasarCipher-APK
           path: bin/*.apk
